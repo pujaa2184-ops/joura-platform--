@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JOURA - Journey of Reflection and Achievement</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b1329;
+      color: #e2e8f0;
+      background-image: radial-gradient(circle at 50% 20%, #172554 0%, #0b1329 100%);
+    }
+    .adventure-card {
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .adventure-card:hover {
+      transform: translateY(-6px) scale(1.02);
+    }
+    /* Custom Stylings for 2D Adventure Map Canvas World */
+    .map-world-container {
+      background: linear-gradient(135deg, #0d9488 0%, #166534 35%, #1e293b 100%);
+      position: relative;
+      overflow: hidden;
+      border-radius: 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+    .map-node-hotspot {
+      position: absolute;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 10;
+    }
+    .map-node-hotspot:hover {
+      transform: scale(1.12) translateY(-4px);
+    }
+    .avatar-sprite {
+      position: absolute;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 20;
+      pointer-events: none;
+      filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.5));
+    }
+    @keyframes floatAvatar {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .avatar-floating {
+      animation: floatAvatar 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+  <!-- TOP HUD BAR (Game Header) -->
+  <header class="bg-slate-950/80 backdrop-blur-md text-white shadow-2xl sticky top-0 z-50 border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex justify-between items-center">
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="returnToWorldMap()">
+        <div class="bg-gradient-to-tr from-amber-400 to-amber-600 p-2.5 rounded-2xl text-slate-950 font-black text-xl flex items-center justify-center w-11 h-11 shadow-lg shadow-amber-500/30 group-hover:rotate-12 transition">
+          J
+        </div>
+        <div>
+          <h1 class="font-extrabold text-xl tracking-wider leading-none text-white">JOURA</h1>
+          <p class="text-[10px] text-amber-300 font-extrabold tracking-widest uppercase mt-0.5">Journey of Reflection & Achievement</p>
+        </div>
+      </div>
+      
+      <!-- HUD Stats & Navigation -->
+      <div class="flex items-center space-x-3">
+        <button id="worldMapBtn" onclick="returnToWorldMap()" class="hidden bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 shadow-sm">
+          <i data-lucide="map" class="w-4 h-4 text-amber-400"></i>
+          <span id="currentWorldName">Peta Dunia</span>
+        </button>
+        
+        <div class="flex items-center space-x-2 bg-slate-900 px-3.5 py-2 rounded-xl border border-slate-800 shadow-sm">
+          <i data-lucide="shield" class="w-4 h-4 text-amber-400"></i>
+          <span class="text-xs font-extrabold text-amber-200">Explorer Lv. 3</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN ADVENTURE CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: WORLD SELECTION GATE (PETA DUNIA) -->
+    <!-- ========================================== -->
+    <section id="worldSelectionView" class="space-y-8 animate-fade-in">
+      <div class="text-center max-w-2xl mx-auto mb-8">
+        <span class="bg-amber-500/10 text-amber-400 text-xs font-extrabold px-4 py-1.5 rounded-full uppercase tracking-widest border border-amber-500/30 shadow-inner">
+          🗺️ Benua Pembelajaran JOURA
+        </span>
+        <h2 class="text-3xl sm:text-5xl font-black text-white mt-4 mb-3 tracking-tight">Pilih Wilayah Petualangan</h2>
+        <p class="text-slate-300 text-sm sm:text-base font-medium">Setiap monumen wilayah menyimpan misi, mentor, dan artefak pencapaian belajarmu secara mandiri.</p>
+      </div>
+
+      <!-- Grid Monumen Mata Pelajaran -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- 1. Bahasa Inggris -->
+        <div onclick="enterWorld('Bahasa Inggris', '🏰 Kastil Sastra')" class="adventure-card bg-slate-900/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-slate-800 hover:border-amber-400 cursor-pointer group relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-tr from-indigo-600 to-indigo-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition">
+              <i data-lucide="castle" class="w-8 h-8 text-amber-300"></i>
+            </div>
+            <h3 class="text-xl font-black mt-5 text-white group-hover:text-amber-300 transition">Kastil Sastra</h3>
+            <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-0.5">Bahasa Inggris</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Jelajahi menara narasi, teks deskriptif, dan gulungan pidato kerajaan.</p>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-amber-400">
+              <span>Masuki Wilayah</span>
+              <i data-lucide="compass" class="w-4 h-4 group-hover:rotate-45 transition"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Matematika -->
+        <div onclick="enterWorld('Matematika', '⛰️ Gua Angka Kuno')" class="adventure-card bg-slate-900/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-slate-800 hover:border-amber-400 cursor-pointer group relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-tr from-blue-600 to-blue-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-110 transition">
+              <i data-lucide="mountain" class="w-8 h-8 text-amber-300"></i>
+            </div>
+            <h3 class="text-xl font-black mt-5 text-white group-hover:text-amber-300 transition">Gua Angka Kuno</h3>
+            <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-0.5">Matematika</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Pecahkan teka-teki fungsi kuadratik, matriks, dan kalkulus magis.</p>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-amber-400">
+              <span>Masuki Wilayah</span>
+              <i data-lucide="compass" class="w-4 h-4 group-hover:rotate-45 transition"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Sejarah -->
+        <div onclick="enterWorld('Sejarah', '🏛️ Kuil Peradaban')" class="adventure-card bg-slate-900/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-slate-800 hover:border-amber-400 cursor-pointer group relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-tr from-amber-600 to-amber-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-600/30 group-hover:scale-110 transition">
+              <i data-lucide="landmark" class="w-8 h-8 text-amber-200"></i>
+            </div>
+            <h3 class="text-xl font-black mt-5 text-white group-hover:text-amber-300 transition">Kuil Peradaban</h3>
+            <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-0.5">Sejarah</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Telusuri gulungan papirus kuno dan artefak perjuangan nusantara.</p>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-amber-400">
+              <span>Masuki Wilayah</span>
+              <i data-lucide="compass" class="w-4 h-4 group-hover:rotate-45 transition"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. PPKn -->
+        <div onclick="enterWorld('Pendidikan Kewarganegaraan', '🛡️ Benteng Pancasila')" class="adventure-card bg-slate-900/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-slate-800 hover:border-amber-400 cursor-pointer group relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-tr from-emerald-600 to-emerald-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-110 transition">
+              <i data-lucide="shield-check" class="w-8 h-8 text-amber-300"></i>
+            </div>
+            <h3 class="text-xl font-black mt-5 text-white group-hover:text-amber-300 transition">Benteng Pancasila</h3>
+            <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-0.5">PPKn</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Uji kebijaksanaan hukum, keadilan sosial, dan pilar kenegaraan.</p>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-amber-400">
+              <span>Masuki Wilayah</span>
+              <i data-lucide="compass" class="w-4 h-4 group-hover:rotate-45 transition"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Bahasa Indonesia -->
+        <div onclick="enterWorld('Bahasa Indonesia', '📜 Aula Sastra Nusantara')" class="adventure-card bg-slate-900/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-slate-800 hover:border-amber-400 cursor-pointer group relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-rose-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-tr from-rose-600 to-rose-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-rose-600/30 group-hover:scale-110 transition">
+              <i data-lucide="book-open-check" class="w-8 h-8 text-amber-300"></i>
+            </div>
+            <h3 class="text-xl font-black mt-5 text-white group-hover:text-amber-300 transition">Aula Sastra</h3>
+            <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-0.5">Bahasa Indonesia</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Kuasai seni negosiasi, debat tajam, dan keindahan puisi nusantara.</p>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-amber-400">
+              <span>Masuki Wilayah</span>
+              <i data-lucide="compass" class="w-4 h-4 group-hover:rotate-45 transition"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. IPA -->
+        <div onclick="enterWorld('Ilmu Pengetahuan Alam', '🧪 Menara Alkimia')" class="adventure-card bg-slate-900/90 backdrop-blur-sm rounded-3xl p-6 shadow-xl border-2 border-slate-800 hover:border-amber-400 cursor-pointer group relative overflow-hidden">
+          <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition"></div>
+          <div class="relative z-10">
+            <div class="w-16 h-16 bg-gradient-to-tr from-teal-600 to-teal-800 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-teal-600/30 group-hover:scale-110 transition">
+              <i data-lucide="flask-conical" class="w-8 h-8 text-amber-300"></i>
+            </div>
+            <h3 class="text-xl font-black mt-5 text-white group-hover:text-amber-300 transition">Menara Alkimia</h3>
+            <p class="text-xs text-amber-400 font-bold uppercase tracking-wider mt-0.5">Ilmu Pengetahuan Alam</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium">Eksplorasi hukum alam, reaksi kimia, dan rahasia biologi kosmik.</p>
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-extrabold text-amber-400">
+              <span>Masuki Wilayah</span>
+              <i data-lucide="compass" class="w-4 h-4 group-hover:rotate-45 transition"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- VIEW 2: 2D ILLUSTRATED ADVENTURE GAME WORLD MAP        -->
+    <!-- ======================================================= -->
+    <section id="journeyMapView" class="hidden space-y-8 animate-fade-in">
+      
+      <!-- Adventure Map Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border-2 border-slate-800">
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div class="flex items-center space-x-2 text-amber-400 text-xs font-bold uppercase tracking-widest">
+              <i data-lucide="compass" class="w-4 h-4 text-amber-400 animate-spin"></i>
+              <span id="activeWorldCategory">Wilayah Terpilih</span>
+            </div>
+            <h2 class="text-2xl sm:text-4xl font-black mt-1 text-white" id="selectedWorldTitle">Nama Wilayah</h2>
+            <p class="text-slate-300 text-xs sm:text-sm mt-1">Klik salah satu lokasi di dunia petualangan 2D di bawah untuk memulai misi.</p>
+          </div>
+          <button onclick="returnToWorldMap()" class="text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 px-4 py-3 rounded-xl font-bold border border-slate-700 transition flex items-center gap-2 shadow-md">
+            <i data-lucide="map" class="w-4 h-4"></i> Kembali ke Peta Dunia
+          </button>
+        </div>
+      </div>
+
+      <!-- 2D ILLUSTRATED ADVENTURE MAP WORLD (REDESIGNED ENVIRONMENT) -->
+      <div class="map-world-container w-full h-[520px] sm:h-[600px] relative shadow-2xl border-4 border-amber-500/40">
+        
+        <!-- Background Nature Environment SVGs & Decorations -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-90">
+          <!-- Sungai Berkelok SVG -->
+          <svg class="absolute inset-0 w-full h-full" viewBox="0 0 1000 600" preserveAspectRatio="none">
+            <path d="M 100,550 Q 300,450 400,300 T 700,200 Q 850,150 900,50" fill="none" stroke="#0284c7" stroke-width="48" stroke-linecap="round" opacity="0.75" />
+            <path d="M 100,550 Q 300,450 400,300 T 700,200 Q 850,150 900,50" fill="none" stroke="#38bdf8" stroke-width="20" stroke-linecap="round" opacity="0.6" />
+            
+            <!-- Jalan Setapak Perjalanan Berkelok (Winding Path) -->
+            <path id="questPathLine" d="M 120,480 Q 250,420 320,280 Q 420,120 560,200 Q 680,280 820,180" fill="none" stroke="#fbbf24" stroke-width="12" stroke-dasharray="10 8" stroke-linecap="round" opacity="0.9" />
+          </svg>
+
+          <!-- Dekorasi Lingkungan: Pohon-pohon, Bukit, dan Bebatuan Cartoony -->
+          <div class="absolute top-10 left-12 text-5xl opacity-80 filter drop-shadow-md">🌲</div>
+          <div class="absolute top-24 left-36 text-4xl opacity-80 filter drop-shadow-md">🌳</div>
+          <div class="absolute bottom-16 left-20 text-5xl opacity-80 filter drop-shadow-md">🏕️</div>
+          <div class="absolute top-1/2 left-1/3 text-6xl opacity-80 filter drop-shadow-md">⛰️</div>
+          <div class="absolute bottom-20 right-1/3 text-5xl opacity-80 filter drop-shadow-md">🌸</div>
+          <div class="absolute top-12 right-20 text-6xl opacity-80 filter drop-shadow-md">🌲</div>
+          <div class="absolute bottom-12 right-16 text-6xl opacity-80 filter drop-shadow-md">🗼</div>
+          <div class="absolute top-1/3 right-1/4 text-4xl opacity-80">⛩️</div>
+        </div>
+
+        <!-- 🏃‍♂️ AVATAR SISWA (MENGHADIRKAN KARAKTER PETUALANG YANG BERGERAK DI JALUR) -->
+        <div id="playerAvatar" class="avatar-sprite avatar-floating flex flex-col items-center" style="left: 100px; top: 430px;">
+          <div class="bg-amber-400 text-slate-950 text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-lg border border-white mb-1 animate-bounce">
+            Kamu 🛡️
+          </div>
+          <div class="w-12 h-12 bg-gradient-to-tr from-amber-500 to-amber-300 rounded-full border-4 border-white shadow-2xl flex items-center justify-center text-xl">
+            🧑‍🎓
+          </div>
+        </div>
+
+        <!-- LOKASI 1: BASE CAMP (SUBMIT) -->
+        <div onclick="openLevel(1)" class="map-node-hotspot flex flex-col items-center" style="left: 80px; top: 420px;">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-indigo-600 hover:bg-indigo-500 rounded-3xl border-4 border-amber-300 shadow-2xl flex flex-col items-center justify-center text-white relative group">
+            <span class="absolute -top-3 bg-emerald-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow">Completed</span>
+            <span class="text-2xl sm:text-3xl">🏕️</span>
+            <div class="absolute inset-0 rounded-3xl bg-amber-400/20 opacity-0 group-hover:opacity-100 transition"></div>
+          </div>
+          <div class="mt-2 bg-slate-900/90 text-amber-300 px-3 py-1 rounded-xl text-xs font-extrabold border border-amber-500/40 shadow-xl backdrop-blur-sm">
+            1. Base Camp (Submit)
+          </div>
+        </div>
+
+        <!-- LOKASI 2: POS MENTOR (FEEDBACK) -->
+        <div onclick="openLevel(2)" class="map-node-hotspot flex flex-col items-center" style="left: 280px; top: 220px;">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600 hover:bg-blue-500 rounded-3xl border-4 border-amber-300 shadow-2xl flex flex-col items-center justify-center text-white relative group">
+            <span class="absolute -top-3 bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow animate-pulse">Active</span>
+            <span class="text-2xl sm:text-3xl">⛺</span>
+          </div>
+          <div class="mt-2 bg-slate-900/90 text-amber-300 px-3 py-1 rounded-xl text-xs font-extrabold border border-amber-500/40 shadow-xl backdrop-blur-sm">
+            2. Pos Mentor (Feedback)
+          </div>
+        </div>
+
+        <!-- LOKASI 3: BENGKEL ALKIMIA (REVISION) -->
+        <div onclick="openLevel(3)" class="map-node-hotspot flex flex-col items-center" style="left: 500px; top: 140px;">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-amber-600 hover:bg-amber-500 rounded-3xl border-4 border-white shadow-2xl flex flex-col items-center justify-center text-white relative group">
+            <span class="absolute -top-3 bg-slate-700 text-slate-200 text-[9px] font-black px-2 py-0.5 rounded-full shadow">Unlocked</span>
+            <span class="text-2xl sm:text-3xl">🛠️</span>
+          </div>
+          <div class="mt-2 bg-slate-900/90 text-amber-300 px-3 py-1 rounded-xl text-xs font-extrabold border border-amber-500/40 shadow-xl backdrop-blur-sm">
+            3. Bengkel Alkimia (Revision)
+          </div>
+        </div>
+
+        <!-- LOKASI 4: KUIL REFLEKSI (REFLECTION) -->
+        <div onclick="openLevel(4)" class="map-node-hotspot flex flex-col items-center" style="left: 650px; top: 260px;">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-purple-600 hover:bg-purple-500 rounded-3xl border-4 border-slate-500 shadow-2xl flex flex-col items-center justify-center text-white relative group">
+            <span class="absolute -top-3 bg-slate-700 text-slate-300 text-[9px] font-black px-2 py-0.5 rounded-full shadow">Unlocked</span>
+            <span class="text-2xl sm:text-3xl">⛩️</span>
+          </div>
+          <div class="mt-2 bg-slate-900/90 text-amber-300 px-3 py-1 rounded-xl text-xs font-extrabold border border-amber-500/40 shadow-xl backdrop-blur-sm">
+            4. Kuil Refleksi (Reflection)
+          </div>
+        </div>
+
+        <!-- LOKASI 5: MENARA ACHIEVEMENT (MY LEARNING PROGRESS) -->
+        <div onclick="openLevel(5)" class="map-node-hotspot flex flex-col items-center" style="left: 820px; top: 120px;">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-600 hover:bg-emerald-500 rounded-3xl border-4 border-amber-400 shadow-2xl flex flex-col items-center justify-center text-white relative group">
+            <span class="absolute -top-3 bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full shadow">Goal</span>
+            <span class="text-2xl sm:text-3xl">🗼</span>
+          </div>
+          <div class="mt-2 bg-slate-900/90 text-amber-300 px-3 py-1 rounded-xl text-xs font-extrabold border border-amber-500/40 shadow-xl backdrop-blur-sm">
+            5. Menara Progress
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ACTIVE LEVEL INTERIOR CONTAINER -->
+    <div id="levelContentContainer" class="bg-slate-900/95 backdrop-blur-md rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-slate-800 mt-8">
+      
+      <!-- ========================================== -->
+      <!-- LEVEL 1: BASE CAMP – SUBMIT INTERIOR -->
+      <!-- ========================================== -->
+      <div id="level1Content" class="level-panel space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-800 gap-2">
+          <div>
+            <span class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider">Level 1: Base Camp Petualangan</span>
+            <h3 class="text-2xl font-black text-white flex items-center gap-2">
+              🏕️ SUBMIT — Kotak Penyerahan Misi
+            </h3>
+          </div>
+          <span class="text-xs bg-indigo-950 text-indigo-300 px-3 py-1 rounded-xl border border-indigo-800 font-bold">
+            Kapasitas Tas: 3/5 Berkas
+          </span>
+        </div>
+
+        <!-- Form Unggah Berkas Petualangan -->
+        <form onsubmit="handleTaskSubmit(event)" class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 space-y-4 shadow-inner">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2">
+            <i data-lucide="package-plus" class="w-4 h-4 text-amber-400"></i> Serahkan Misi Tugas Baru ke Peti
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">Judul Misi / Tugas</label>
+              <input type="text" id="taskTitleInput" required placeholder="Contoh: Misi 3 - Analisis Lanjutan" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">Format Artefak</label>
+              <select id="taskTypeInput" class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white focus:ring-2 focus:ring-amber-500 text-sm outline-none">
+                <option value="Gulungan Dokumen (.pdf, .docx)">Gulungan Dokumen (.pdf, .docx)</option>
+                <option value="Rekaman Video Misi (.mp4)">Rekaman Video Misi (.mp4)</option>
+                <option value="Rekaman Suara (.mp3)">Rekaman Suara (.mp3)</option>
+                <option value="Lukisan / Foto (.png, .jpg)">Lukisan / Foto (.png, .jpg)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1.5">Pilih Berkas Misi</label>
+            <input type="file" id="taskFileInput" required class="w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-700 file:text-amber-300 hover:file:bg-slate-600 cursor-pointer bg-slate-900 border border-slate-700 rounded-xl">
+          </div>
+          <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+            <i data-lucide="upload" class="w-4 h-4"></i> Simpan ke Folder SUBMIT
+          </button>
+        </form>
+
+        <!-- List Kronologis Inventaris Tugas -->
+        <div>
+          <h4 class="font-bold text-sm text-white mb-3 flex items-center gap-2">
+            <i data-lucide="archive" class="w-4 h-4 text-amber-400"></i> Inventaris Tas Tugas (Kronologis)
+          </h4>
+          <div id="submittedTasksList" class="space-y-3">
+            <div class="p-4 bg-slate-800/90 rounded-2xl border border-slate-700 flex items-center justify-between shadow-sm">
+              <div class="flex items-center space-x-3.5">
+                <div class="p-3 bg-indigo-950 text-indigo-400 rounded-xl border border-indigo-900">
+                  <i data-lucide="file-text" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h5 class="font-bold text-white text-sm">Misi 1: Dokumen Lembar Kerja Utama</h5>
+                  <p class="text-xs text-slate-400 font-medium">Kronologi Pos 1 • Format: PDF • Status: Telah Dinilai Mentor</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-xl">Tersimpan</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- LEVEL 2: POS MENTOR – FEEDBACK INTERIOR -->
+      <!-- ========================================== -->
+      <div id="level2Content" class="level-panel hidden space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-800 gap-2">
+          <div>
+            <span class="text-xs font-extrabold text-blue-400 uppercase tracking-wider">Level 2: Pos Penjagaan Mentor</span>
+            <h3 class="text-2xl font-black text-white flex items-center gap-2">
+              ⛺ FEEDBACK — Ruang Diskusi Pesan Mentor
+            </h3>
+          </div>
+          <button onclick="openLevel(1)" class="text-xs bg-slate-800 text-amber-300 px-3.5 py-2 rounded-xl border border-slate-700 font-bold hover:bg-slate-700 flex items-center gap-1.5">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Cek Tugas Terkait di Base Camp
+          </button>
+        </div>
+
+        <!-- Kotak Dialog Natural Mentor & Siswa -->
+        <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 space-y-5 shadow-inner">
+          <div class="flex justify-between items-center pb-3 border-b border-slate-700">
+            <div>
+              <span class="text-[11px] font-extrabold text-blue-300 bg-blue-950 border border-blue-800 px-3 py-1 rounded-full">
+                Misi 1: Lembar Kerja Utama
+              </span>
+              <p class="text-xs text-slate-400 font-medium mt-1">Status: Memerlukan penyesuaian daftar pustaka</p>
+            </div>
+            <span class="text-xs text-emerald-400 font-bold bg-emerald-950 px-3 py-1 rounded-xl border border-emerald-800">
+              💬 3 Pesan Aktif
+            </span>
+          </div>
+
+          <!-- Chat History -->
+          <div id="chatHistory" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+            
+            <div class="flex items-start gap-3.5 bg-blue-950/40 p-4 rounded-2xl border border-blue-900/60 shadow-sm">
+              <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                👨‍🏫
+              </div>
+              <div class="text-xs space-y-1.5 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-black text-blue-300 text-sm">Pak Guru / Mentor Utama</span>
+                  <span class="text-[10px] text-slate-400">Kemarin, 14:30 WITA</span>
+                </div>
+                <p class="text-slate-200 text-sm leading-relaxed">"Halo Petualang! Analisis data kamu udah rapi banget dan logis. Cuman, coba cek lagi daftar pustakanya ya, formatnya belum pakai standar APA edisi terbaru. Coba dirapiin sebelum lanjut ke Bengkel Revisi!"</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3.5 bg-slate-900 p-4 rounded-2xl border border-slate-800 ml-4 sm:ml-8 shadow-sm">
+              <div class="w-9 h-9 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                🛡️
+              </div>
+              <div class="text-xs space-y-1.5 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-black text-amber-300 text-sm">Kamu (Petualang Siswa)</span>
+                  <span class="text-[10px] text-slate-400">Kemarin, 15:10 WITA</span>
+                </div>
+                <p class="text-slate-200 text-sm leading-relaxed">"Oh iya, Pak/Bu! Maaf kelewat bagian format APA-nya. Ntar saya perbaiki pakai panduan sitasi biar pas. Mau nanya juga, kalau untuk penulisan judul jurnal di daftar pustaka perlu dimiringkan nggak ya?"</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3.5 bg-blue-950/40 p-4 rounded-2xl border border-blue-900/60 shadow-sm">
+              <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+                👨‍🏫
+              </div>
+              <div class="text-xs space-y-1.5 flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-black text-blue-300 text-sm">Pak Guru / Mentor Utama</span>
+                  <span class="text-[10px] text-slate-400">Hari ini, 08:15 WITA</span>
+                </div>
+                <p class="text-slate-200 text-sm leading-relaxed">"Betul sekali, judul artikel jurnalnya dimiringkan, tapi nama jurnal utamanya tetap biasa ya. Semangat perbaikannya di Pos 3!"</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Input Balasan Chat Interaktif -->
+          <div class="pt-3 border-t border-slate-700/80">
+            <div class="flex gap-3">
+              <input type="text" id="feedbackResponseInput" placeholder="Ketik balasan atau pertanyaan untuk mentor..." class="flex-1 px-4 py-3.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+              <button onclick="sendFeedbackResponse()" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold transition shadow-lg flex items-center gap-2 shrink-0">
+                <i data-lucide="send" class="w-4 h-4"></i> Kirim Pesan
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- LEVEL 3: BENGKEL ALKIMIA – REVISION INTERIOR -->
+      <!-- ========================================== -->
+      <div id="level3Content" class="level-panel hidden space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-800 gap-2">
+          <div>
+            <span class="text-xs font-extrabold text-amber-400 uppercase tracking-wider">Level 3: Bengkel Alkimia Perbaikan</span>
+            <h3 class="text-2xl font-black text-white flex items-center gap-2">
+              🛠️ REVISION — Meja Tempa Perbaikan Misi
+            </h3>
+          </div>
+          <span class="text-xs bg-amber-950 text-amber-300 px-3 py-1 rounded-xl border border-amber-800 font-bold">
+            Mode Split-Screen Aktif
+          </span>
+        </div>
+
+        <!-- Form Unggah Revisi -->
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 space-y-4 shadow-inner">
+          <h4 class="font-bold text-sm text-white flex items-center gap-2">
+            <i data-lucide="hammer" class="w-4 h-4 text-amber-400"></i> Unggah Artefak Hasil Revisi Berdasarkan Pesan Mentor
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">Pilih Misi Terkait</label>
+              <select class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm outline-none font-medium">
+                <option>Misi 1: Lembar Kerja Utama</option>
+                <option>Misi 2: Praktik Proyek Lapangan</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1.5">Unggah Berkas Revisi Baru</label>
+              <input type="file" class="w-full text-xs text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-700 file:text-amber-300 hover:file:bg-slate-600 cursor-pointer bg-slate-900 border border-slate-700 rounded-xl">
+            </div>
+          </div>
+          <button onclick="alert('Artefak hasil revisi berhasil ditempa dan disimpan ke folder REVISION!');" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-sm rounded-xl transition shadow-lg">
+            Tempa & Simpan Revisi
+          </button>
+        </div>
+
+        <!-- Split-Screen Comparison View -->
+        <div class="border border-slate-700 rounded-2xl p-6 space-y-4 bg-slate-800/90 shadow-lg">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <h4 class="font-black text-white text-sm flex items-center gap-2">
+              <i data-lucide="git-compare" class="w-4 h-4 text-amber-400"></i> Perbandingan Artefak: Misi 1
+            </h4>
+            <button onclick="toggleOriginalView()" id="toggleViewBtn" class="text-xs bg-slate-900 hover:bg-slate-700 text-amber-300 px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition border border-slate-700 shadow-sm">
+              <i data-lucide="eye" class="w-4 h-4"></i> View Original Scroll (Tugas Asal)
+            </button>
+          </div>
+
+          <div id="originalSubmissionBox" class="hidden p-4 bg-slate-900 rounded-xl border border-slate-700 text-xs text-slate-400 space-y-1 animate-fade-in">
+            <p class="font-black text-slate-300 uppercase tracking-wider text-[10px]">Gulungan Tugas Awal (Sebelum Revisi):</p>
+            <p class="italic text-slate-400">"Analisis data menunjukkan tren peningkatan, namun referensi pustaka masih belum menggunakan standar APA edisi terbaru."</p>
+          </div>
+
+          <div class="p-4 bg-emerald-950/60 rounded-xl border border-emerald-800 text-xs text-emerald-200 space-y-1 shadow-inner">
+            <p class="font-black text-emerald-300 uppercase tracking-wider text-[10px]">Artefak Hasil Revisi Terbaru (Setelah Umpan Balik Mentor):</p>
+            <p class="italic text-emerald-100">"Analisis data menunjukkan tren peningkatan secara signifikan, lengkap dengan daftar pustaka berstandar APA edisi terbaru dan judul jurnal dimiringkan."</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- LEVEL 4: KUIL KEBIJAKSANAAN – REFLECTION -->
+      <!-- ========================================== -->
+      <div id="level4Content" class="level-panel hidden space-y-6">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-800 gap-2">
+          <div>
+            <span class="text-xs font-extrabold text-purple-400 uppercase tracking-wider">Level 4: Kuil Kebijaksanaan</span>
+            <h3 class="text-2xl font-black text-white flex items-center gap-2">
+              ⛩️ REFLECTION — Buku Kode Perenungan Diri
+            </h3>
+          </div>
+          <span class="text-xs bg-purple-950 text-purple-300 px-3 py-1 rounded-xl border border-purple-800 font-bold">
+            5 Pertanyaan Suci Kuil
+          </span>
+        </div>
+
+        <form onsubmit="handleReflectionSubmit(event)" class="space-y-5 bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-inner">
+          <div>
+            <label class="block text-xs font-extrabold text-slate-200 mb-1.5">1. Apa yang kamu pelajari dari misi dan tugas ini?</label>
+            <textarea rows="2" required class="w-full p-3.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm outline-none focus:ring-2 focus:ring-purple-500 font-medium" placeholder="Tuliskan pemahaman barumu di sini..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-extrabold text-slate-200 mb-1.5">2. Kesulitan apa yang kamu hadapi saat menyelesaikan misi ini?</label>
+            <textarea rows="2" required class="w-full p-3.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm outline-none focus:ring-2 focus:ring-purple-500 font-medium" placeholder="Tuliskan rintangan atau kendala..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-extrabold text-slate-200 mb-1.5">3. Bagian apa dari hasil pekerjaanmu yang menurutmu masih perlu diperbaiki?</label>
+            <textarea rows="2" required class="w-full p-3.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm outline-none focus:ring-2 focus:ring-purple-500 font-medium" placeholder="Evaluasi bagian artefak kerjamu..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-extrabold text-slate-200 mb-1.5">4. Bagaimana umpan balik mentor membantumu memperbaiki hasil pekerjaan?</label>
+            <textarea rows="2" required class="w-full p-3.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm outline-none focus:ring-2 focus:ring-purple-500 font-medium" placeholder="Jelaskan peran pesan mentor..."></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs font-extrabold text-slate-200 mb-1.5">5. Apa yang akan kamu lakukan secara berbeda ketika mengerjakan misi berikutnya?</label>
+            <textarea rows="2" required class="w-full p-3.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm outline-none focus:ring-2 focus:ring-purple-500 font-medium" placeholder="Strategi perbaikan di masa depan..."></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-black text-sm rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+            <i data-lucide="feather" class="w-4 h-4"></i> Meterai & Simpan Jurnal Kuil
+          </button>
+        </form>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- LEVEL 5: MENARA HARTA – MY LEARNING PROGRESS -->
+      <!-- ========================================== -->
+      <div id="level5Content" class="level-panel hidden space-y-8">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-slate-800 gap-2">
+          <div>
+            <span class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">Level 5: Menara Puncak Harta Karun</span>
+            <h3 class="text-2xl font-black text-white flex items-center gap-2">
+              🗼 PROGRESS — Peta Pertumbuhan & Artefak Pencapaian
+            </h3>
+          </div>
+          <span class="text-xs bg-emerald-950 text-emerald-300 px-3 py-1 rounded-xl border border-emerald-800 font-bold">
+            Level Kekuatan: Max
+          </span>
+        </div>
+
+        <!-- Component A: Learning Growth Chart -->
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-sm">
+          <h4 class="font-black text-sm text-white mb-1 flex items-center gap-2">
+            <i data-lucide="line-chart" class="w-4 h-4 text-emerald-400"></i> A. Learning Growth Chart (Grafik Peta Harta Karun)
+          </h4>
+          <p class="text-xs text-slate-400 mb-4 font-medium">Visualisasi grafik garis kenaikan poin kekuatan nilai dari misi ke misi.</p>
+          <div class="h-72 w-full bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-inner">
+            <canvas id="growthChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Component B: Revision Improvement -->
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-sm">
+          <h4 class="font-black text-sm text-white mb-3 flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i> B. Revision Improvement (Peningkatan Skor Pasca-Revisi)
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-between items-center shadow-xs">
+              <div>
+                <p class="text-xs text-white font-bold">Misi 1: Lembar Kerja Utama</p>
+                <p class="text-xs text-slate-400 mt-1">Awal: <span class="font-bold text-slate-200">65</span> → Sesudah Revisi: <span class="font-bold text-emerald-400">85</span></p>
+              </div>
+              <span class="text-xs font-black text-emerald-300 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-xl">+20 Poin Kekuatan</span>
+            </div>
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-between items-center shadow-xs">
+              <div>
+                <p class="text-xs text-white font-bold">Misi 2: Praktik Proyek</p>
+                <p class="text-xs text-slate-400 mt-1">Awal: <span class="font-bold text-slate-200">70</span> → Sesudah Revisi: <span class="font-bold text-emerald-400">88</span></p>
+              </div>
+              <span class="text-xs font-black text-emerald-300 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-xl">+18 Poin Kekuatan</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Component C: Learning Achievement Badges -->
+        <div class="bg-slate-800/80 p-6 rounded-2xl border border-slate-700 shadow-sm">
+          <h4 class="font-black text-sm text-white mb-1 flex items-center gap-2">
+            <i data-lucide="award" class="w-4 h-4 text-amber-400"></i> C. Learning Achievement Badges (Koleksi Lencana Magis)
+          </h4>
+          <p class="text-xs text-slate-400 mb-5 font-medium">Lencana penghargaan yang terbuka seiring penyelesaian misi petualangan.</p>
+          
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-center flex flex-col items-center shadow-xs hover:border-amber-500 transition group">
+              <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/20 group-hover:scale-110 transition shadow-inner">
+                <i data-lucide="flag" class="w-7 h-7"></i>
+              </div>
+              <h5 class="font-black text-xs text-white">First Step</h5>
+              <p class="text-[10px] text-slate-400 mt-0.5 font-bold">Pengumpulan Pertama</p>
+            </div>
+
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-center flex flex-col items-center shadow-xs hover:border-blue-500 transition group">
+              <div class="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-3 border border-blue-500/20 group-hover:scale-110 transition shadow-inner">
+                <i data-lucide="message-circle" class="w-7 h-7"></i>
+              </div>
+              <h5 class="font-black text-xs text-white">Feedback Seeker</h5>
+              <p class="text-[10px] text-slate-400 mt-0.5 font-bold">Dialogis Mentor</p>
+            </div>
+
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-center flex flex-col items-center shadow-xs hover:border-amber-500 transition group">
+              <div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-3 border border-amber-500/20 group-hover:scale-110 transition shadow-inner">
+                <i data-lucide="sparkles" class="w-7 h-7"></i>
+              </div>
+              <h5 class="font-black text-xs text-white">Revision Rookie</h5>
+              <p class="text-[10px] text-slate-400 mt-0.5 font-bold">Penyelesaian Revisi</p>
+            </div>
+
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-center flex flex-col items-center shadow-xs opacity-60">
+              <div class="w-14 h-14 rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center mb-3">
+                <i data-lucide="lock" class="w-7 h-7"></i>
+              </div>
+              <h5 class="font-black text-xs text-slate-300">Reflection Master</h5>
+              <p class="text-[10px] text-slate-500 mt-0.5 font-bold">5 Jurnal Kuil</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 border-t border-slate-800/80 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400 font-bold">
+      &copy; 2026 <b>JOURA</b> (Journey of Reflection and Achievement). Platform Pendidikan 2D Adventure Game.
+    </div>
+  </footer>
+
+  <!-- ADVENTURE GAME JAVASCRIPT LOGIC -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+    });
+
+    let chartInstance = null;
+
+    // Koordinat posisi Pixel / Persen untuk Avatar Siswa di Peta 2D [left, top]
+    const avatarPositions = {
+      1: { left: '80px', top: '420px' },
+      2: { left: '280px', top: '220px' },
+      3: { left: '500px', top: '140px' },
+      4: { left: '650px', top: '260px' },
+      5: { left: '820px', top: '120px' }
+    };
+
+    // Transisi dari World Map ke Learning Journey Map Pos 5 Level
+    function enterWorld(worldName, categoryTitle) {
+      document.getElementById('worldSelectionView').classList.add('hidden');
+      document.getElementById('journeyMapView').classList.remove('hidden');
+      document.getElementById('worldMapBtn').classList.remove('hidden');
+      
+      document.getElementById('currentWorldName').innerText = worldName;
+      document.getElementById('selectedWorldTitle').innerText = worldName;
+      document.getElementById('activeWorldCategory').innerText = categoryTitle;
+      
+      // Default buka Level 2 (Pos Mentor aktif sesuai data saat ini)
+      openLevel(2);
+    }
+
+    // Kembali ke Peta Dunia Utama
+    function returnToWorldMap() {
+      document.getElementById('worldSelectionView').classList.remove('hidden');
+      document.getElementById('journeyMapView').classList.add('hidden');
+      document.getElementById('worldMapBtn').classList.add('hidden');
+    }
+
+    // Switch antar Level di Journey Map & Pindahkan Karakter Avatar Siswa
+    function openLevel(levelNumber) {
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`level${i}Content`).classList.add('hidden');
+      }
+
+      document.getElementById(`level${levelNumber}Content`).classList.remove('hidden');
+
+      // Pindahkan posisi Avatar Sprite di Peta 2D secara dinamis
+      const avatar = document.getElementById('playerAvatar');
+      const pos = avatarPositions[levelNumber];
+      if (pos) {
+        avatar.style.left = pos.left;
+        avatar.style.top = pos.top;
+      }
+
+      if (levelNumber === 5) {
+        setTimeout(renderGrowthChart, 100);
+      }
+
+      document.getElementById('levelContentContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      lucide.createIcons();
+    }
+
+    // Toggle Split-Screen View Original Scroll di Level 3 (Revision)
+    function toggleOriginalView() {
+      const box = document.getElementById('originalSubmissionBox');
+      const btn = document.getElementById('toggleViewBtn');
+      box.classList.toggle('hidden');
+      if (!box.classList.contains('hidden')) {
+        btn.innerHTML = `<i data-lucide="eye-off" class="w-4 h-4"></i> Sembunyikan Tugas Asal`;
+      } else {
+        btn.innerHTML = `<i data-lucide="eye" class="w-4 h-4"></i> View Original Scroll (Tugas Asal)`;
+      }
+      lucide.createIcons();
+    }
+
+    // Handle Upload Tugas di Level 1 (SUBMIT)
+    function handleTaskSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById('taskTitleInput').value;
+      const type = document.getElementById('taskTypeInput').value;
+      
+      const list = document.getElementById('submittedTasksList');
+      const newItem = document.createElement('div');
+      newItem.className = "p-4 bg-slate-800/90 rounded-2xl border border-slate-700 flex items-center justify-between shadow-sm animate-fade-in";
+      newItem.innerHTML = `
+        <div class="flex items-center space-x-3.5">
+          <div class="p-3 bg-indigo-950 text-indigo-400 rounded-xl border border-indigo-900">
+            <i data-lucide="file-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h5 class="font-bold text-white text-sm">${title}</h5>
+            <p class="text-xs text-slate-400 font-medium">Baru saja diserahkan • Format: ${type}</p>
+          </div>
+        </div>
+        <span class="text-xs font-extrabold text-emerald-400 bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-xl">Tersimpan</span>
+      `;
+      list.prepend(newItem);
+      lucide.createIcons();
+      alert('Artefak misi berhasil diserahkan ke Base Camp Level 1!');
+      document.getElementById('taskTitleInput').value = '';
+      document.getElementById('taskFileInput').value = '';
+    }
+
+    // Handle Dialog Chat Interaktif dengan Mentor di Level 2 (FEEDBACK)
+    function sendFeedbackResponse() {
+      const input = document.getElementById('feedbackResponseInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const chatHistory = document.getElementById('chatHistory');
+      
+      const newMsg = document.createElement('div');
+      newMsg.className = "flex items-start gap-3.5 bg-slate-900 p-4 rounded-2xl border border-slate-800 ml-4 sm:ml-8 shadow-sm animate-fade-in";
+      newMsg.innerHTML = `
+        <div class="w-9 h-9 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+          🛡️
+        </div>
+        <div class="text-xs space-y-1.5 flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-black text-amber-300 text-sm">Kamu (Petualang Siswa)</span>
+            <span class="text-[10px] text-slate-400">Baru saja</span>
+          </div>
+          <p class="text-slate-200 text-sm leading-relaxed">"${text}"</p>
+        </div>
+      `;
+      chatHistory.appendChild(newMsg);
+      input.value = '';
+
+      // Simulasi balasan otomatis dari NPC Mentor setelah 1,5 detik
+      setTimeout(() => {
+        const teacherReply = document.createElement('div');
+        teacherReply.className = "flex items-start gap-3.5 bg-blue-950/40 p-4 rounded-2xl border border-blue-900/60 shadow-sm animate-fade-in";
+        teacherReply.innerHTML = `
+          <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-md">
+            👨‍🏫
+          </div>
+          <div class="text-xs space-y-1.5 flex-1">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-blue-300 text-sm">Pak Guru / Mentor Utama</span>
+              <span class="text-[10px] text-slate-400">Baru saja</span>
+            </div>
+            <p class="text-slate-200 text-sm leading-relaxed">"Catatan bagus diterima! Silakan dilanjutkan ke Level 3 Bengkel Alkimia untuk menempa hasil perbaikanmu."</p>
+          </div>
+        `;
+        chatHistory.appendChild(teacherReply);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }, 1500);
+
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // Handle Jurnal Refleksi di Level 4
+    function handleReflectionSubmit(e) {
+      e.preventDefault();
+      alert('Jurnal refleksi suci berhasil dimeterai di Kuil Kebijaksanaan! Poin pencapaian tercatat.');
+    }
+
+    // Render Growth Chart Chart.js di Level 5
+    function renderGrowthChart() {
+      const canvasEl = document.getElementById('growthChart');
+      if (!canvasEl) return;
+      const ctx = canvasEl.getContext('2d');
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Misi 1 (Awal)', 'Misi 1 (Revisi)', 'Misi 2 (Awal)', 'Misi 2 (Revisi)'],
+          datasets: [{
+            label: 'Poin Kekuatan Nilai',
+            data: [65, 85, 70, 88],
+            borderColor: '#34d399',
+            backgroundColor: 'rgba(52, 211, 153, 0.15)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 6,
+            pointBackgroundColor: '#059669',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              min: 50,
+              max: 100,
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { weight: 'bold' } }
+            },
+            x: {
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { weight: 'bold' } }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
